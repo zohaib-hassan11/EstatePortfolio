@@ -14,7 +14,9 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# public/build is COMMITTED on purpose - Hostinger shared hosting has no Node,
+# so the compiled CSS/JS has to travel with the repo. Run `npm run build`
+# before committing whenever you change anything under resources/.
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage

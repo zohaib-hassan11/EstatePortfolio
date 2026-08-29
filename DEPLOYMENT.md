@@ -1,0 +1,158 @@
+# Deploying to Hostinger (shared hosting)
+
+Shared hosting has **PHP, Composer, Git and MySQL, but no Node**. So the compiled
+CSS/JS is committed to the repo (`public/build`) and built on your machine, never
+on the server.
+
+---
+
+## 1. Add your SSH key to Hostinger
+
+You already have a key at `~/.ssh/id_ed25519` — the same one that pushes to
+GitHub. Reuse it.
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+In **hPanel → Advanced → SSH Access**: switch SSH on, note the **IP, port and
+username** (the port is usually `65002`, the username `uXXXXXXXXX`), then paste
+the public key into *SSH Keys → Import SSH Key*.
+
+Save yourself typing it every time — in `~/.ssh/config` on your machine:
+
+```
+Host hostinger
+    HostName YOUR_SERVER_IP
+    User uXXXXXXXXX
+    Port 65002
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Then `ssh hostinger` gets you in.
+
+### Let the server pull from GitHub
+
+The server needs its own key to reach GitHub:
+
+```bash
+ssh hostinger
+ssh-keygen -t ed25519 -C "hostinger-deploy" -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub
+```
+
+Add that output to GitHub as a **deploy key**: repo → Settings → Deploy keys →
+Add deploy key. Read-only is enough. Then confirm:
+
+```bash
+ssh -T git@github.com     # "Hi zohaib-hassan11/EstatePortfolio!"
+```
+
+---
+
+## 2. Create the database
+
+**hPanel → Databases → MySQL Databases.** Create a database and a user, give the
+user all privileges, and keep the three values — Hostinger prefixes them, so they
+look like `u123456789_estate`.
+
+---
+
+## 3. Clone the app
+
+Laravel must **not** be cloned straight into `public_html`: that would expose
+`.env`, `storage/` and every source file to the open web. Clone it alongside, and
+point the web root at `public/`.
+
+```bash
+ssh hostinger
+cd ~/domains/yourdomain.com
+
+git clone git@github.com:zohaib-hassan11/EstatePortfolio.git app
+cd app
+
+composer install --no-dev --optimize-autoloader
+
+cp .env.hostinger.example .env
+nano .env                    # fill in APP_URL and the three DB values
+php artisan key:generate
+
+php artisan migrate --force
+php artisan db:seed --force  # demo listings; skip if you are adding real ones
+php artisan storage:link
+
+chmod -R 775 storage bootstrap/cache
+```
+
+### Point `public_html` at `public/`
+
+```bash
+cd ~/domains/yourdomain.com
+rm -rf public_html
+ln -s app/public public_html
+```
+
+If Hostinger refuses to serve through the symlink, use the fallback instead:
+
+```bash
+cd ~/domains/yourdomain.com
+mkdir -p public_html
+cp -r app/public/* app/public/.htaccess public_html/
+```
+
+and edit `public_html/index.php`, changing the two `__DIR__.'/../'` paths to
+`__DIR__.'/../app/'`. The symlink is cleaner — try it first.
+
+---
+
+## 4. Every deploy after that
+
+On **your machine**, whenever you touch anything under `resources/`:
+
+```bash
+npm run build
+git add public/build
+git commit -m "Rebuild assets"
+git push
+```
+
+On the **server**:
+
+```bash
+ssh hostinger
+cd ~/domains/yourdomain.com/app
+./deploy.sh
+```
+
+`deploy.sh` pulls, installs, migrates, re-links storage and rebuilds the caches.
+
+> **Never run `migrate:fresh` on the server.** It drops every table. `deploy.sh`
+> uses `migrate --force`, which only applies new migrations.
+
+---
+
+## 5. Before you call it live
+
+- [ ] `APP_DEBUG=false` and `APP_ENV=production` in the server `.env`
+- [ ] **Change the admin password** — `DEMO_LOGIN_PASSWORD` in `.env`, and the
+      real user's password: `php artisan tinker` →
+      `App\Models\User::first()->update(['password' => bcrypt('...')]);`
+- [ ] Set `DEMO_LOGIN=false` if the site stops being a demo
+- [ ] Turn on **SSL** in hPanel → Security → SSL, and make `APP_URL` `https://`
+- [ ] Replace the placeholder figures, bio and licence in **Settings → Business**
+- [ ] Submit `https://yourdomain.com/sitemap.xml` in Google Search Console
+- [ ] Check `https://yourdomain.com/storage/branding/...` loads — if not, the
+      `storage:link` symlink did not take
+
+---
+
+## If something breaks
+
+| Symptom | Cause |
+|---|---|
+| 500, blank page | `storage/` not writable → `chmod -R 775 storage bootstrap/cache` |
+| Site loads unstyled | `public/build` missing → run `npm run build` locally and commit it |
+| "No application encryption key" | `php artisan key:generate` on the server |
+| Uploaded images 404 | `php artisan storage:link` |
+| Changes to `.env` do nothing | `php artisan config:clear && php artisan config:cache` |
+| Directory listing instead of the site | `public_html` is not pointing at `app/public` |

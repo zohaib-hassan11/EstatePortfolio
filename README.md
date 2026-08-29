@@ -284,6 +284,11 @@ save/validate/reset round-trips, and the profile and password flows.
 
 ## Going live
 
+> Deploying to **Hostinger shared hosting**? The full walkthrough — SSH keys,
+> database, document root, and the redeploy loop — is in
+> [DEPLOYMENT.md](DEPLOYMENT.md).
+
+
 1. Set `APP_ENV=production`, `APP_DEBUG=false` and a real `APP_URL` in `.env`.
 2. Replace the seeded admin account:
    ```bash
