@@ -1,0 +1,27 @@
+/*
+ * Chart tokens.
+ *
+ * Series colours are a brand-derived categorical palette, validated with the
+ * dataviz skill's checker against the white card surface these charts sit on
+ * (lightness band, chroma floor, CVD separation, normal-vision floor, contrast
+ * - all pass, all-pairs). Do not re-pick these by eye; re-run the validator.
+ *
+ * The admin has no dark theme, so there is deliberately no dark step here -
+ * dark series colours on a white card would be a bug, not a feature.
+ */
+.viz-root {
+    --series-1: #b06f10; /* brass  - Property enquiries */
+    --series-2: #0d8a72; /* teal   - Appraisal requests  (one step brighter than
+                            the UI teal #0d7a68, which sits just under the
+                            chroma floor for chart marks) */
+    --series-3: #4257ad; /* indigo - General contact */
+
+    --viz-surface:   #ffffff;
+    --viz-ink:       #16211f;
+    --viz-ink-soft:  #4c605b;
+    --viz-muted:     #6b807a;
+    --viz-grid:      #e2e9e7;
+    --viz-baseline:  #c4d1cd;
+
+    font-variant-numeric: tabular-nums;
+}

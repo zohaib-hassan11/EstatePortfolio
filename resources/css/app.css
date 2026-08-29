@@ -1,0 +1,220 @@
+@import 'tailwindcss';
+@import 'sweetalert2/dist/sweetalert2.min.css';
+@import './viz.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../js/**/*.vue';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+
+    /* ---- Ink: deep green-charcoal. Text, dark sections, "sold". ---- */
+    --color-ink-50:  #f3f6f5;
+    --color-ink-100: #e2e9e7;
+    --color-ink-200: #c4d1cd;
+    --color-ink-300: #9aada8;
+    --color-ink-400: #6b807a;
+    --color-ink-500: #4c605b;
+    --color-ink-600: #3a4b46;
+    --color-ink-700: #2c3b37;
+    --color-ink-800: #1f2c29;
+    --color-ink-900: #16211f;
+    --color-ink-950: #0c1413;
+
+    /* ---- Sand: the warm page base ---- */
+    --color-sand-50:  #faf7f2;
+    --color-sand-100: #f4efe6;
+    --color-sand-200: #eae2d4;
+    --color-sand-300: #dbcfbb;
+
+    /* ---- Brass: primary accent. CTAs, "under offer", highlights. ---- */
+    --color-brass-50:  #fdf8ef;
+    --color-brass-100: #f8ecd6;
+    --color-brass-200: #f0d9ae;
+    --color-brass-300: #e2c188;
+    --color-brass-400: #cfa565;
+    --color-brass-500: #b8894a;
+    --color-brass-600: #9c7038;
+    --color-brass-700: #7c582c;
+
+    /* ---- Teal: "for sale", active, positive ---- */
+    --color-teal-50:  #eef7f4;
+    --color-teal-100: #d5ebe5;
+    --color-teal-200: #a9d7cc;
+    --color-teal-300: #6fbdab;
+    --color-teal-400: #2f9a83;
+    --color-teal-500: #0d7a68;
+    --color-teal-600: #0a6355;
+    --color-teal-700: #084e43;
+
+    /* ---- Clay: warm secondary. Featured, buying, emphasis. ---- */
+    --color-clay-50:  #fdf3ef;
+    --color-clay-100: #f9e0d6;
+    --color-clay-200: #f2c1ae;
+    --color-clay-300: #e79a7c;
+    --color-clay-400: #d5754f;
+    --color-clay-500: #c25a3a;
+    --color-clay-600: #a4482d;
+    --color-clay-700: #833823;
+
+    /* ---- Indigo: informational. Appraisals, plots, cool contrast. ---- */
+    --color-indigo-50:  #eff1fb;
+    --color-indigo-100: #dde2f6;
+    --color-indigo-200: #bcc6ec;
+    --color-indigo-300: #94a2df;
+    --color-indigo-400: #6373c2;
+    --color-indigo-500: #4257ad;
+    --color-indigo-600: #35468d;
+    --color-indigo-700: #2a376f;
+
+    --radius-card: 0.875rem;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-sand-50 text-ink-800 antialiased;
+    }
+
+    h1, h2, h3 {
+        @apply font-display font-normal tracking-tight text-ink-900;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-brass-600;
+    }
+}
+
+/*
+ * Custom classes are declared as @utility (not @layer components) so Tailwind v4
+ * lets us @apply them inside one another - .btn-primary builds on .btn.
+ */
+
+@utility container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+}
+
+@utility container-wide {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+}
+
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3
+           text-sm font-semibold transition-colors duration-150
+           disabled:opacity-60 disabled:cursor-not-allowed;
+}
+
+@utility btn-primary {
+    @apply btn bg-ink-900 text-sand-50 hover:bg-ink-700;
+}
+
+@utility btn-accent {
+    @apply btn bg-brass-500 text-white hover:bg-brass-600;
+}
+
+@utility btn-outline {
+    @apply btn border border-ink-300 text-ink-800 hover:border-ink-900 hover:bg-ink-900 hover:text-sand-50;
+}
+
+@utility btn-ghost-light {
+    @apply btn border border-white/30 text-white hover:bg-white hover:text-ink-900;
+}
+
+@utility card {
+    @apply rounded-card border border-ink-100 bg-white overflow-hidden;
+}
+
+@utility label {
+    @apply block text-sm font-semibold text-ink-700 mb-1.5;
+}
+
+@utility input {
+    @apply w-full rounded-lg border border-ink-200 bg-white px-4 py-2.5 text-[15px] text-ink-900
+           placeholder:text-ink-400 focus:border-brass-500 focus:ring-2 focus:ring-brass-500/20
+           focus:outline-none transition;
+}
+
+@utility input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/20;
+}
+
+@utility eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brass-600;
+}
+
+/* ---- Section bands ------------------------------------------------------
+ * Pages alternate between these instead of running one flat neutral, so a long
+ * page has rhythm. Each is a tint of a palette colour, never a saturated block.
+ */
+/*
+ * Built at runtime in selling.blade.php ("border-t-{$tone}-500"), so Tailwind's
+ * scanner cannot see them. Listed here to keep them in the build.
+ */
+@source inline("{border-t,text}-{teal,brass,clay,indigo}-{500,600}");
+
+@utility band-sand {
+    @apply bg-sand-100;
+}
+
+@utility band-teal {
+    @apply bg-teal-50;
+}
+
+@utility band-cream {
+    @apply bg-brass-50;
+}
+
+@utility band-ink {
+    @apply bg-ink-900 text-sand-100;
+}
+
+/* Warm wash behind the hero - a tint, not a colour block. */
+@utility hero-wash {
+    background:
+        radial-gradient(72rem 38rem at 8% -12%, var(--color-brass-200) 0%, transparent 58%),
+        radial-gradient(58rem 34rem at 96% 4%, var(--color-teal-200) 0%, transparent 55%),
+        radial-gradient(46rem 30rem at 62% 108%, var(--color-clay-100) 0%, transparent 60%),
+        var(--color-sand-100);
+}
+
+/* A card that names its accent: a 3px colour rule along the top edge. */
+@utility card-accent {
+    @apply relative overflow-hidden;
+}
+
+@utility chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1
+           text-xs font-bold tracking-wide uppercase;
+}
+
+@utility prose-page {
+    @apply text-[17px] leading-relaxed text-ink-600;
+
+    & p + p {
+        @apply mt-4;
+    }
+}
+
+/* Keeps the sticky mobile call bar from covering page content. */
+@utility pb-callbar {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+
+/* ---- SweetAlert2 -------------------------------------------------------- */
+.swal2-popup {
+    font-family: var(--font-sans);
+    background: var(--color-sand-50);
+}
+
+.swal2-actions {
+    gap: 0.5rem;
+}
+
+.swal2-toast {
+    background: #fff !important;
+}
