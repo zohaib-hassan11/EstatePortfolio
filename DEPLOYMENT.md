@@ -149,8 +149,9 @@ cd ~/domains/yourdomain.com/app
       runs dry, visitors get your phone number instead of an answer. `AI_CHAT_ENABLED=false` keeps the drafts but hides the assistant;
       `AI_CHAT_DAILY_LIMIT` caps how many visitor messages it answers per day.
 - [ ] **Scheduler cron** — hPanel → Advanced → Cron Jobs, every minute:
-      `cd ~/domains/yourdomain.com/app && php artisan schedule:run >> /dev/null 2>&1`
-      (adjust the path to where you cloned the app). It deletes anonymous
+      `cd ~/domains/yourdomain.com/app && /opt/alt/php84/usr/bin/php artisan schedule:run >> /dev/null 2>&1`
+      (adjust the path to where you cloned the app). Use the full PHP 8.4 path:
+      the plain `php` on Hostinger's command line can be older than the site's. It deletes anonymous
       assistant chats after 90 days.
 
 ---
