@@ -22,7 +22,9 @@
         ['route' => 'admin.settings.index',     'label' => 'Settings',     'match' => 'admin.settings.*'],
         ['route' => 'admin.profile.edit',       'label' => 'Profile',      'match' => 'admin.profile.*'],
     ];
-    $unread = \App\Models\Enquiry::unread()->count();
+    // Counts what still owes someone a reply, not mail merely left unopened -
+    // an enquiry the agent skimmed and never answered is still outstanding work.
+    $outstanding = \App\Models\Enquiry::needsReply()->count();
 @endphp
 
 <div class="flex min-h-screen flex-col lg:flex-row">
@@ -50,8 +52,8 @@
                                'text-ink-300 hover:bg-white/5 hover:text-white' => ! request()->routeIs($item['match']),
                            ])>
                             {{ $item['label'] }}
-                            @if ($item['label'] === 'Enquiries' && $unread)
-                                <span class="rounded-full bg-brass-500 px-2 py-0.5 text-[11px] font-bold text-white">{{ $unread }}</span>
+                            @if ($item['label'] === 'Enquiries' && $outstanding)
+                                <span class="rounded-full bg-brass-500 px-2 py-0.5 text-[11px] font-bold text-white">{{ $outstanding }}</span>
                             @endif
                         </a>
                     </li>

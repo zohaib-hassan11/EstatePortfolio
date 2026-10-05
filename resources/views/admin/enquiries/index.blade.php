@@ -1,10 +1,51 @@
 <x-layouts.admin title="Enquiries" heading="Enquiries">
+    {{-- Quick views: the three questions the agent actually opens this page with. --}}
+    @php
+        $view = request('view');
+        $views = [
+            ''            => ['All', null],
+            'needs_reply' => ['Needs reply', $needsReplyCount],
+            'overdue'     => ['Overdue', $overdueCount],
+        ];
+    @endphp
+
+    <div class="mb-4 flex flex-wrap gap-2">
+        @foreach ($views as $value => [$label, $count])
+            <a href="{{ request()->fullUrlWithQuery(['view' => $value ?: null, 'page' => null]) }}"
+               @class([
+                   'rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
+                   'border-ink-900 bg-ink-900 text-sand-100' => (string) $view === (string) $value,
+                   'border-ink-200 text-ink-600 hover:border-ink-400' => (string) $view !== (string) $value,
+               ])>
+                {{ $label }}@if ($count !== null) <span class="tabular-nums opacity-70">({{ $count }})</span>@endif
+            </a>
+        @endforeach
+    </div>
+
     <form method="GET" class="mb-6 flex flex-wrap gap-3">
+        <input type="hidden" name="view" value="{{ $view }}">
+
         <label class="sr-only" for="enq-type">Type</label>
-        <select id="enq-type" name="type" class="input sm:w-56" onchange="this.form.submit()">
+        <select id="enq-type" name="type" class="input sm:w-48" onchange="this.form.submit()">
             <option value="">All enquiry types</option>
             @foreach (['property' => 'Property enquiries', 'appraisal' => 'Free appraisals', 'contact' => 'General contact'] as $value => $label)
                 <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+
+        <label class="sr-only" for="enq-priority">Priority</label>
+        <select id="enq-priority" name="priority" class="input sm:w-40" onchange="this.form.submit()">
+            <option value="">Any priority</option>
+            @foreach (\App\Support\EnquiryPriority::options() as $value => $label)
+                <option value="{{ $value }}" @selected(request('priority') === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+
+        <label class="sr-only" for="enq-status">Status</label>
+        <select id="enq-status" name="status" class="input sm:w-40" onchange="this.form.submit()">
+            <option value="">Any status</option>
+            @foreach (\App\Models\Enquiry::statuses() as $value => $label)
+                <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
             @endforeach
         </select>
 
@@ -23,28 +64,43 @@
         <div class="card divide-y divide-ink-50">
             @foreach ($enquiries as $enquiry)
                 <a href="{{ route('admin.enquiries.show', $enquiry) }}"
-                   class="flex flex-col gap-2 px-5 py-4 hover:bg-sand-50 sm:flex-row sm:items-center sm:justify-between">
+                   class="flex flex-col gap-2 px-5 py-4 hover:bg-sand-50 sm:flex-row sm:items-start sm:justify-between">
                     <div class="min-w-0 flex-1">
-                        <p class="flex items-center gap-2">
-                            @unless ($enquiry->isRead())
-                                <span class="h-2 w-2 shrink-0 rounded-full bg-brass-500" title="Unread"></span>
-                            @endunless
-                            <span @class(['truncate', 'font-semibold text-ink-900' => ! $enquiry->isRead(), 'text-ink-700' => $enquiry->isRead()])>
+                        <p class="flex flex-wrap items-center gap-2">
+                            <x-priority-chip :priority="$enquiry->priority" :reason="$enquiry->priorityReason()" class="!text-[11px]" />
+
+                            <span @class(['truncate', 'font-semibold text-ink-900' => $enquiry->isOpen(), 'text-ink-700' => ! $enquiry->isOpen()])>
                                 {{ $enquiry->name }}
                             </span>
+
                             <span class="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold text-ink-600 uppercase">
                                 {{ $enquiry->typeLabel() }}
                             </span>
+
+                            @if ($enquiry->isOverdue())
+                                <span class="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                                    Overdue
+                                </span>
+                            @endif
                         </p>
+
                         <p class="mt-1 truncate text-sm text-ink-500">
                             {{ $enquiry->email }}@if ($enquiry->phone) &middot; {{ $enquiry->phone }} @endif
                             @if ($enquiry->property) &middot; re: {{ $enquiry->property->title }} @endif
                         </p>
+
                         @if ($enquiry->message)
                             <p class="mt-1 truncate text-sm text-ink-400">{{ $enquiry->message }}</p>
                         @endif
+
+                        {{-- The rule behind the priority, spelled out. --}}
+                        <p class="mt-1.5 text-xs text-ink-400">{{ $enquiry->priorityReason() }}</p>
                     </div>
-                    <span class="shrink-0 text-xs text-ink-400">{{ $enquiry->created_at->format('j M Y, g:ia') }}</span>
+
+                    <div class="flex shrink-0 flex-row items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
+                        <x-enquiry-status-chip :status="$enquiry->status" class="!text-[11px]" />
+                        <span class="text-xs text-ink-400">{{ $enquiry->created_at->format('j M Y, g:ia') }}</span>
+                    </div>
                 </a>
             @endforeach
         </div>

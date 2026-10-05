@@ -61,6 +61,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
         Route::get('enquiries/{enquiry}', [AdminEnquiryController::class, 'show'])->name('enquiries.show');
+        Route::patch('enquiries/{enquiry}', [AdminEnquiryController::class, 'update'])->name('enquiries.update');
+        Route::post('enquiries/{enquiry}/draft', [AdminEnquiryController::class, 'draft'])
+            ->middleware('throttle:20,1')
+            ->name('enquiries.draft');
         Route::delete('enquiries/{enquiry}', [AdminEnquiryController::class, 'destroy'])->name('enquiries.destroy');
 
         Route::resource('testimonials', AdminTestimonialController::class)->except('show');

@@ -46,7 +46,7 @@ class DashboardMetrics
             [
                 'label'  => 'Enquiries, last 30 days',
                 'value'  => (string) $last30,
-                'meta'   => Enquiry::unread()->count().' still unread',
+                'meta'   => Enquiry::needsReply()->count().' still need a reply',
                 'delta'  => $this->delta($last30, $prev30),
             ],
         ];

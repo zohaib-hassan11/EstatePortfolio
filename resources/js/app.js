@@ -9,6 +9,7 @@ import TestimonialCarousel from './components/TestimonialCarousel.vue'
 import ServiceAreaMap from './components/ServiceAreaMap.vue'
 import StackedBarChart from './components/StackedBarChart.vue'
 import HBarChart from './components/HBarChart.vue'
+import ReplyDrafter from './components/ReplyDrafter.vue'
 
 /*
  * Vue islands.
@@ -27,6 +28,7 @@ const components = {
     ServiceAreaMap,
     StackedBarChart,
     HBarChart,
+    ReplyDrafter,
 }
 
 document.querySelectorAll('[data-vue]').forEach((el) => {

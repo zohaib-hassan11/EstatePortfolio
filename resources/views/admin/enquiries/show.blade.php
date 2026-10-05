@@ -5,8 +5,20 @@
 
     <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <section class="card p-6">
-            <h2 class="font-display text-2xl text-ink-900">{{ $enquiry->name }}</h2>
+            <div class="flex flex-wrap items-center gap-2">
+                <x-priority-chip :priority="$enquiry->priority" />
+                <x-enquiry-status-chip :status="$enquiry->status" />
+                @if ($enquiry->isOverdue())
+                    <span class="chip bg-red-50 text-red-700">
+                        <span class="h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden="true"></span>
+                        Follow-up overdue
+                    </span>
+                @endif
+            </div>
+
+            <h2 class="mt-4 font-display text-2xl text-ink-900">{{ $enquiry->name }}</h2>
             <p class="mt-1 text-sm text-ink-400">Received {{ $enquiry->created_at->format('l j F Y, g:ia') }}</p>
+            <p class="mt-1 text-sm text-ink-500">{{ $enquiry->priorityReason() }}</p>
 
             @if ($enquiry->message)
                 <div class="mt-6 rounded-lg bg-sand-50 p-5">
@@ -41,8 +53,44 @@
         </section>
 
         <aside class="space-y-4">
+            {{-- Where this sits in the workflow, and when to chase it. --}}
+            <div class="card p-6">
+                <h2 class="font-sans text-base font-semibold">Progress</h2>
+
+                <form method="POST" action="{{ route('admin.enquiries.update', $enquiry) }}" class="mt-4 space-y-4">
+                    @csrf @method('PATCH')
+
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-ink-700">Status</label>
+                        <select id="status" name="status" class="input mt-1 w-full">
+                            @foreach (\App\Models\Enquiry::statuses() as $value => $label)
+                                <option value="{{ $value }}" @selected(old('status', $enquiry->status) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('status')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label for="follow_up_at" class="block text-sm font-medium text-ink-700">Chase on</label>
+                        <input type="date" id="follow_up_at" name="follow_up_at" class="input mt-1 w-full"
+                               value="{{ old('follow_up_at', $enquiry->follow_up_at?->toDateString()) }}">
+                        <p class="mt-1 text-xs text-ink-400">Leave empty if nothing is owed. Cleared when you close the enquiry.</p>
+                        @error('follow_up_at')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full">Save progress</button>
+                </form>
+            </div>
+
             <div class="card p-6">
                 <h2 class="font-sans text-base font-semibold">Reply</h2>
+
+                @if ($aiAvailable)
+                    <div class="mt-4 border-b border-ink-100 pb-5">
+                        <x-island name="ReplyDrafter" :props="['endpoint' => route('admin.enquiries.draft', $enquiry)]" />
+                    </div>
+                @endif
+
                 <div class="mt-4 space-y-2">
                     <a href="mailto:{{ $enquiry->email }}?subject={{ urlencode('Re: your enquiry with '.config('agent.name')) }}" class="btn-primary w-full">
                         Email {{ Str::before($enquiry->email, '@') }}

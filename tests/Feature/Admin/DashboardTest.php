@@ -106,15 +106,19 @@ class DashboardTest extends TestCase
         );
     }
 
-    public function test_tiles_report_the_unread_count(): void
+    public function test_tiles_report_how_much_work_is_still_outstanding(): void
     {
-        Enquiry::create(['type' => 'contact', 'name' => 'C', 'email' => 'c@example.com']);
+        // Opened but never answered still counts as outstanding - the tile
+        // tracks what is owed a reply, not what has been glanced at.
+        Enquiry::create(['type' => 'contact', 'name' => 'C', 'email' => 'c@example.com', 'read_at' => now()]);
+        Enquiry::create(['type' => 'contact', 'name' => 'D', 'email' => 'd@example.com',
+            'status' => Enquiry::STATUS_REPLIED]);
 
         $tiles = collect($this->metrics()->tiles());
         $enquiryTile = $tiles->firstWhere('label', 'Enquiries, last 30 days');
 
-        $this->assertSame('1', $enquiryTile['value']);
-        $this->assertStringContainsString('1 still unread', $enquiryTile['meta']);
+        $this->assertSame('2', $enquiryTile['value']);
+        $this->assertStringContainsString('1 still need a reply', $enquiryTile['meta']);
     }
 
     public function test_guests_cannot_reach_the_dashboard(): void

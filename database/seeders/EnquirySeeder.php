@@ -88,16 +88,28 @@ class EnquirySeeder extends Seeder
                 $name = Arr::random($names);
                 $slug = strtolower(str_replace(' ', '.', $name));
 
+                $read = $week >= 2 ? $when->copy()->addHours(mt_rand(1, 20)) : (mt_rand(0, 2) ? $when->copy()->addHours(mt_rand(1, 20)) : null);
+
                 $row = [
                     'type'       => $type,
                     'name'       => $name,
                     'email'      => $slug.'@example.com',
                     'phone'      => mt_rand(0, 4) ? '+92 3'.mt_rand(0, 4).mt_rand(10, 99).' '.mt_rand(1000000, 9999999) : null,
                     // Older enquiries have been dealt with; the last fortnight has unread ones.
-                    'read_at'    => $week >= 2 ? $when->copy()->addHours(mt_rand(1, 20)) : (mt_rand(0, 2) ? $when->copy()->addHours(mt_rand(1, 20)) : null),
+                    'read_at'    => $read,
+                    // Anything older than a fortnight has run its course. Recent
+                    // ones are left mid-flight so the queue has real work in it.
+                    'status'     => $week >= 2
+                        ? Arr::random([Enquiry::STATUS_REPLIED, Enquiry::STATUS_REPLIED, Enquiry::STATUS_CLOSED])
+                        : ($read ? Enquiry::STATUS_IN_PROGRESS : Enquiry::STATUS_NEW),
                     'created_at' => $when,
                     'updated_at' => $when,
                 ];
+
+                // A handful of open ones carry a follow-up date, some already past.
+                if ($week < 3 && mt_rand(0, 2) === 0) {
+                    $row['follow_up_at'] = $when->copy()->addDays(mt_rand(2, 10));
+                }
 
                 if ($type === 'property') {
                     // Featured listings pull more interest, which is what the chart should show.
