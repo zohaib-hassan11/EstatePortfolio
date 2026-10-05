@@ -22,14 +22,22 @@ class SiteSettings
     /** @return array<string, mixed> dot key => value */
     public function all(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, function () {
-            // During `migrate` or a fresh clone the table may not exist yet.
-            if (! $this->tableExists()) {
-                return [];
-            }
+        try {
+            return Cache::rememberForever(self::CACHE_KEY, function () {
+                // During `migrate` or a fresh clone the table may not exist yet.
+                if (! $this->tableExists()) {
+                    return [];
+                }
 
-            return Setting::pluck('value', 'key')->all();
-        });
+                return Setting::pluck('value', 'key')->all();
+            });
+        } catch (Throwable) {
+            // The cache is stored in the database too, so with no database at
+            // all - `composer install` on a fresh clone or in CI boots the app
+            // before one exists - even reading it throws. Overrides are
+            // optional by design: fall back to the config file's defaults.
+            return [];
+        }
     }
 
     /** Merge the stored overrides onto config('agent'). Called from the provider. */

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -141,6 +142,17 @@ class SettingsTest extends TestCase
 
         Storage::disk('public')->assertMissing($first);
         Storage::disk('public')->assertExists(Setting::find('logo_mark')->value);
+    }
+
+    public function test_with_no_database_reachable_the_config_defaults_apply(): void
+    {
+        // `composer install` on a fresh clone boots the app before any
+        // database exists; the cache read must not take the install down.
+        Cache::shouldReceive('rememberForever')->andThrow(new \RuntimeException('Database file does not exist.'));
+
+        $this->assertSame([], app(SiteSettings::class)->all());
+        app(SiteSettings::class)->apply();
+        $this->assertSame(require config_path('agent.php'), config('agent'));
     }
 
     public function test_guests_cannot_read_or_change_settings(): void
