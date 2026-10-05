@@ -173,6 +173,11 @@ stale build.
       both blank and neither appears. Keep credit on the OpenRouter key: when it
       runs dry, visitors get your phone number instead of an answer. `AI_CHAT_ENABLED=false` keeps the drafts but hides the assistant;
       `AI_CHAT_DAILY_LIMIT` caps how many visitor messages it answers per day.
+- [ ] **Email** — create a mailbox in hPanel → Emails (e.g. `noreply@yourdomain.com`),
+      then set `MAIL_MAILER=smtp`, `MAIL_HOST=smtp.hostinger.com`, `MAIL_PORT=465`,
+      `MAIL_SCHEME=smtps`, `MAIL_USERNAME`/`MAIL_FROM_ADDRESS` to that address and
+      `MAIL_PASSWORD` to its password, then `php artisan config:cache`. Until then
+      `MAIL_MAILER=log` sends nothing, and the enquiry confirmation email is skipped.
 - [ ] **Scheduler cron** — hPanel → Advanced → Cron Jobs, every minute:
       `cd ~/domains/yourdomain.com/app && /opt/alt/php84/usr/bin/php artisan schedule:run >> /dev/null 2>&1`
       (adjust the path to where you cloned the app). Use the full PHP 8.4 path:

@@ -32,6 +32,7 @@ class Enquiry extends Model
             'details'      => 'array',
             'read_at'      => 'datetime',
             'follow_up_at' => 'datetime',
+            'confirmation_sent_at' => 'datetime',
         ];
     }
 

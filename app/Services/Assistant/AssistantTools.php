@@ -2,6 +2,7 @@
 
 namespace App\Services\Assistant;
 
+use App\Jobs\SendEnquiryConfirmation;
 use App\Models\ChatConversation;
 use App\Models\ChatUnansweredQuestion;
 use App\Models\Enquiry;
@@ -202,7 +203,7 @@ class AssistantTools
 
         $property = $this->findProperty($data['property_slug'] ?? null) ?? $this->conversation->property;
 
-        DB::transaction(function () use ($data, $property) {
+        $enquiry = DB::transaction(function () use ($data, $property) {
             $enquiry = Enquiry::create([
                 'type'        => $property ? 'property' : 'contact',
                 'source'      => Enquiry::SOURCE_CHAT,
@@ -214,7 +215,12 @@ class AssistantTools
             ]);
 
             $this->conversation->update(['enquiry_id' => $enquiry->id]);
+
+            return $enquiry;
         });
+
+        // Only if they gave an email - chat leads often leave just a number.
+        SendEnquiryConfirmation::for($enquiry);
 
         return 'Saved. The agent now has their details and this chat. Tell the visitor that '
             .config('agent.name').' will be in touch, without promising a time.';

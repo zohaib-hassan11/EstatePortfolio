@@ -126,7 +126,30 @@
                     @endif
                     <div><dt class="text-ink-400">Type</dt><dd class="text-ink-800">{{ $enquiry->typeLabel() }}</dd></div>
                     <div><dt class="text-ink-400">Came in via</dt><dd class="text-ink-800">{{ $enquiry->cameFromChat() ? 'Website assistant' : 'Website form' }}</dd></div>
+                    <div>
+                        <dt class="text-ink-400">Confirmation email</dt>
+                        <dd class="text-ink-800">
+                            @if ($enquiry->confirmation_sent_at)
+                                Sent {{ $enquiry->confirmation_sent_at->format('j M Y, g:ia') }}
+                            @elseif (! $enquiry->email)
+                                Not sent - no email address
+                            @elseif (! \App\Jobs\SendEnquiryConfirmation::mailIsConfigured())
+                                Not sent - email is not set up on this server yet
+                            @else
+                                Not sent
+                            @endif
+                        </dd>
+                    </div>
                 </dl>
+
+                @if ($enquiry->email)
+                    <form method="POST" action="{{ route('admin.enquiries.confirmation', $enquiry) }}" class="mt-3">
+                        @csrf
+                        <button type="submit" class="text-sm font-medium text-brass-600 hover:underline">
+                            {{ $enquiry->confirmation_sent_at ? 'Resend confirmation email' : 'Send confirmation email' }}
+                        </button>
+                    </form>
+                @endif
             </div>
 
             <form method="POST" action="{{ route('admin.enquiries.destroy', $enquiry) }}"

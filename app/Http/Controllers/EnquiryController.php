@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEnquiryRequest;
+use App\Jobs\SendEnquiryConfirmation;
 use App\Models\Enquiry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,9 @@ class EnquiryController extends Controller
             'message'     => $request->input('message'),
             'details'     => $request->appraisalDetails(),
         ]);
+
+        // Sent after this response goes out - the visitor never waits on mail.
+        SendEnquiryConfirmation::for($enquiry);
 
         $confirmation = match ($enquiry->type) {
             'appraisal' => "Thanks {$enquiry->name}. I'll be in touch within one business day to book your free appraisal.",

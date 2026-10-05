@@ -1,0 +1,76 @@
+{{--
+    Confirmation to the person who made an enquiry. Facts only from the
+    records; never their own free text (see App\Mail\EnquiryReceived).
+    Markdown mail: keep lines flush left - indentation becomes a code block.
+--}}
+<x-mail::message>
+# Thanks, {{ $enquiry->name }}
+
+@if ($enquiry->type === 'appraisal')
+Your request for a free property appraisal has reached me. A valuation needs a proper look at the property, so I will be in touch to arrange a time that suits you.
+@elseif ($property)
+Your enquiry about **{{ $property->title }}** has reached me, and I will get back to you shortly.
+@else
+Your message has reached me, and I will get back to you shortly.
+@endif
+
+@if ($property)
+<x-mail::panel>
+**{{ $property->title }}**<br>
+{{ $property->fullAddress() }}
+
+**{{ $property->priceDisplay() }}** · {{ $property->statusLabel() }}<br>
+{{ collect([
+    $property->hasRooms() ? $property->bedrooms.' bed · '.$property->bathrooms.' bath' : null,
+    $property->landDisplay(),
+    $property->floorDisplay() ? $property->floorDisplay().' covered' : null,
+])->filter()->implode(' · ') }}
+@if (filled($property->inspection_times) && $property->status !== 'sold')
+
+Inspection times: {{ $property->inspection_times }}
+@endif
+</x-mail::panel>
+
+<x-mail::button :url="route('properties.show', $property)">
+View the listing
+</x-mail::button>
+@endif
+
+@if ($enquiry->type === 'appraisal' && filled($enquiry->details))
+**The details you gave me**
+
+<x-mail::table>
+| | |
+|:--|:--|
+@foreach ($enquiry->details as $key => $value)
+| {{ ucfirst(str_replace('_', ' ', $key)) }} | {{ $value }} |
+@endforeach
+</x-mail::table>
+@endif
+
+## What happens next
+
+@if (filled($enquiry->phone))
+I will call you on **{{ $enquiry->phone }}**, usually within one business day.
+@else
+I will reply to this email address, usually within one business day.
+@endif
+If it is urgent, call or WhatsApp me on **{{ $agent['phone'] }}**.
+
+<x-mail::button :url="$whatsapp" color="success">
+Message me on WhatsApp
+</x-mail::button>
+
+**Office hours**<br>
+@foreach ($agent['hours'] as $days => $time)
+{{ $days }}: {{ $time }}<br>
+@endforeach
+
+Regards,<br>
+**{{ $agent['name'] }}**<br>
+{{ $agent['title'] }}, {{ $agent['agency'] }}
+
+<x-slot:subcopy>
+You are receiving this because an enquiry was made with this email address on {{ parse_url(config('app.url'), PHP_URL_HOST) }}. If that was not you, you can ignore this email - nothing else will be sent. Just reply to reach {{ $agent['name'] }} directly.
+</x-slot:subcopy>
+</x-mail::message>

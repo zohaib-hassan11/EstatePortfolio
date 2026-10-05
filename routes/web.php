@@ -72,6 +72,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('enquiries/{enquiry}/draft', [AdminEnquiryController::class, 'draft'])
             ->middleware('throttle:20,1')
             ->name('enquiries.draft');
+        Route::post('enquiries/{enquiry}/confirmation', [AdminEnquiryController::class, 'confirmation'])
+            ->middleware('throttle:10,1')
+            ->name('enquiries.confirmation');
         Route::delete('enquiries/{enquiry}', [AdminEnquiryController::class, 'destroy'])->name('enquiries.destroy');
 
         Route::get('assistant', [AdminAssistantController::class, 'index'])->name('assistant.index');

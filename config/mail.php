@@ -115,4 +115,17 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Enquiry confirmation
+    |--------------------------------------------------------------------------
+    |
+    | Email the person who made an enquiry to confirm it arrived. Sent from
+    | MAIL_FROM_ADDRESS in the agent's name, with replies going to the agent's
+    | own email. See App\Jobs\SendEnquiryConfirmation.
+    |
+    */
+
+    'enquiry_confirmation' => (bool) env('ENQUIRY_CONFIRMATION_EMAIL', true),
+
 ];

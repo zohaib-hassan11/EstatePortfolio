@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendEnquiryConfirmation;
 use App\Models\Enquiry;
 use App\Services\EnquiryReplyDrafter;
 use App\Support\Ai\AiUnavailable;
@@ -82,6 +83,22 @@ class EnquiryController extends Controller
 
             return response()->json(['message' => 'Could not draft a reply just now. Please write one below.'], 503);
         }
+    }
+
+    /** Send (or resend) the confirmation email now, and say whether it went. */
+    public function confirmation(Enquiry $enquiry)
+    {
+        abort_unless(filled($enquiry->email), 422, 'This enquiry has no email address.');
+
+        if (! SendEnquiryConfirmation::mailIsConfigured()) {
+            return back()->with('status', 'Email is not set up on this server yet, so nothing was sent.');
+        }
+
+        $sent = (new SendEnquiryConfirmation($enquiry->id, resend: true))->handle();
+
+        return back()->with('status', $sent
+            ? "Confirmation email sent to {$enquiry->email}."
+            : 'The email could not be sent - check the mail settings, or try again in an hour.');
     }
 
     public function destroy(Enquiry $enquiry)
