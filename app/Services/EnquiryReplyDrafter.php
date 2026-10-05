@@ -75,6 +75,9 @@ class EnquiryReplyDrafter
         $facts = $this->facts($enquiry);
         $message = trim((string) $enquiry->message) ?: '(They left no message.)';
         $chat = $this->chat($enquiry);
+        $sent = filled($enquiry->auto_reply)
+            ? "\nTHE AUTOMATIC REPLY THEY ALREADY RECEIVED FROM ME\n(Do not repeat it or contradict it - follow on from it.)\n{$enquiry->auto_reply}\n"
+            : '';
 
         return <<<PROMPT
         FACTS
@@ -82,7 +85,7 @@ class EnquiryReplyDrafter
 
         THEIR MESSAGE
         "{$message}"
-        {$chat}
+        {$chat}{$sent}
         Draft my reply to {$enquiry->name}.
         PROMPT;
     }

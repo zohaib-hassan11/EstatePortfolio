@@ -28,6 +28,17 @@
                 <p class="mt-6 text-sm text-ink-400">No message was included.</p>
             @endif
 
+            @if ($enquiry->auto_reply)
+                {{-- Exactly what the client was emailed, so the follow-up never contradicts it. --}}
+                <details class="mt-6 rounded-lg border border-brass-200 bg-brass-50/50 p-4" open>
+                    <summary class="cursor-pointer text-sm font-semibold text-ink-900">
+                        Automatic reply sent {{ $enquiry->confirmation_sent_at?->format('j M, g:ia') }}
+                    </summary>
+                    <p class="mt-1 text-xs text-ink-500">Written by AI from your listing records and fact-checked before sending. This is what they received.</p>
+                    <p class="mt-3 text-[15px] leading-relaxed whitespace-pre-line text-ink-700">{{ $enquiry->auto_reply }}</p>
+                </details>
+            @endif
+
             @if ($enquiry->conversation)
                 {{-- The chat it came out of: what they asked, and what they were told. --}}
                 <details class="mt-6 rounded-lg border border-teal-100 bg-teal-50/40 p-4" open>
@@ -127,10 +138,10 @@
                     <div><dt class="text-ink-400">Type</dt><dd class="text-ink-800">{{ $enquiry->typeLabel() }}</dd></div>
                     <div><dt class="text-ink-400">Came in via</dt><dd class="text-ink-800">{{ $enquiry->cameFromChat() ? 'Website assistant' : 'Website form' }}</dd></div>
                     <div>
-                        <dt class="text-ink-400">Confirmation email</dt>
+                        <dt class="text-ink-400">First email</dt>
                         <dd class="text-ink-800">
                             @if ($enquiry->confirmation_sent_at)
-                                Sent {{ $enquiry->confirmation_sent_at->format('j M Y, g:ia') }}
+                                {{ $enquiry->auto_reply ? 'AI reply' : 'Template confirmation' }} sent {{ $enquiry->confirmation_sent_at->format('j M Y, g:ia') }}
                             @elseif (! $enquiry->email)
                                 Not sent - no email address
                             @elseif (! \App\Jobs\SendEnquiryConfirmation::mailIsConfigured())
@@ -146,7 +157,7 @@
                     <form method="POST" action="{{ route('admin.enquiries.confirmation', $enquiry) }}" class="mt-3">
                         @csrf
                         <button type="submit" class="text-sm font-medium text-brass-600 hover:underline">
-                            {{ $enquiry->confirmation_sent_at ? 'Resend confirmation email' : 'Send confirmation email' }}
+                            {{ $enquiry->confirmation_sent_at ? 'Resend that email' : 'Send confirmation email' }}
                         </button>
                     </form>
                 @endif

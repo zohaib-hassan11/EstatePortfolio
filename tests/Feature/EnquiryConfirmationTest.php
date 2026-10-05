@@ -170,7 +170,7 @@ class EnquiryConfirmationTest extends TestCase
 
         Mail::assertSent(EnquiryReceived::class);
         $this->actingAs($agent)->get("/admin/enquiries/{$enquiry->id}")
-            ->assertSee('Resend confirmation email');
+            ->assertSee('Resend that email');
     }
 
     public function test_an_enquiry_without_email_offers_no_resend(): void

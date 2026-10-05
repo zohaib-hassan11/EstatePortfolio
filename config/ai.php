@@ -40,6 +40,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Automatic enquiry replies
+    |--------------------------------------------------------------------------
+    |
+    | Answer each website enquiry by email, written by the model from the
+    | listing records and checked against them before sending. A reply that
+    | fails the check, or no model, sends the template confirmation instead.
+    | See App\Services\AutoReply\EnquiryAutoReply.
+    |
+    */
+    'enquiry_reply' => [
+        'enabled' => (bool) env('AI_ENQUIRY_REPLY', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | OpenRouter
     |--------------------------------------------------------------------------
     |

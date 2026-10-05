@@ -1,9 +1,18 @@
 {{--
-    Confirmation to the person who made an enquiry. Facts only from the
-    records; never their own free text (see App\Mail\EnquiryReceived).
+    The first email to the person who made an enquiry: a fact-checked AI
+    answer when there is one ($paragraphs), otherwise the template wording.
+    The card, contacts and hours are always from the records. Never their own
+    free text (see App\Mail\EnquiryReceived).
     Markdown mail: keep lines flush left - indentation becomes a code block.
 --}}
 <x-mail::message>
+@if ($paragraphs)
+{{-- A checked AI answer to their question. Escaped: it is model output. --}}
+@foreach ($paragraphs as $paragraph)
+{!! nl2br(e($paragraph)) !!}
+
+@endforeach
+@else
 # Thanks, {{ $enquiry->name }}
 
 @if ($enquiry->type === 'appraisal')
@@ -12,6 +21,7 @@ Your request for a free property appraisal has reached me. A valuation needs a p
 Your enquiry about **{{ $property->title }}** has reached me, and I will get back to you shortly.
 @else
 Your message has reached me, and I will get back to you shortly.
+@endif
 @endif
 
 @if ($property)
@@ -48,6 +58,9 @@ View the listing
 </x-mail::table>
 @endif
 
+@if ($paragraphs)
+**Reach me directly:** call or WhatsApp **{{ $agent['phone'] }}**
+@else
 ## What happens next
 
 @if (filled($enquiry->phone))
@@ -56,6 +69,7 @@ I will call you on **{{ $enquiry->phone }}**, usually within one business day.
 I will reply to this email address, usually within one business day.
 @endif
 If it is urgent, call or WhatsApp me on **{{ $agent['phone'] }}**.
+@endif
 
 <x-mail::button :url="$whatsapp" color="success">
 Message me on WhatsApp
@@ -66,11 +80,16 @@ Message me on WhatsApp
 {{ $days }}: {{ $time }}<br>
 @endforeach
 
+@unless ($paragraphs)
 Regards,<br>
 **{{ $agent['name'] }}**<br>
 {{ $agent['title'] }}, {{ $agent['agency'] }}
+@endunless
 
 <x-slot:subcopy>
+@if ($paragraphs)
+This reply was prepared automatically from our listing records so you would hear back straight away. {{ $agent['name'] }} will follow up personally.
+@endif
 You are receiving this because an enquiry was made with this email address on {{ parse_url(config('app.url'), PHP_URL_HOST) }}. If that was not you, you can ignore this email - nothing else will be sent. Just reply to reach {{ $agent['name'] }} directly.
 </x-slot:subcopy>
 </x-mail::message>

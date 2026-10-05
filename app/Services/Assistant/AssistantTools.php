@@ -33,8 +33,24 @@ class AssistantTools
     /** One chat cannot fill the questions report on its own. */
     public const MAX_QUESTIONS_PER_CHAT = 5;
 
-    public function __construct(private readonly ChatConversation $conversation)
+    /** The tools that only read published listings - safe without a chat. */
+    public const READ_ONLY = ['search_properties', 'get_property'];
+
+    /**
+     * @param  ChatConversation|null  $conversation  null for read-only use outside a chat
+     *                                               (the enquiry auto-reply); the writing tools then refuse
+     */
+    public function __construct(private readonly ?ChatConversation $conversation = null)
     {
+    }
+
+    /** @return list<array{name: string, description: string, inputSchema: array<string, mixed>}> */
+    public static function readOnlyDefinitions(): array
+    {
+        return array_values(array_filter(
+            static::definitions(),
+            fn (array $tool) => in_array($tool['name'], self::READ_ONLY, true),
+        ));
     }
 
     /** @return list<array{name: string, description: string, inputSchema: array<string, mixed>}> */
@@ -115,6 +131,10 @@ class AssistantTools
     /** @throws ToolFailed */
     public function run(string $name, array $input): string
     {
+        if ($this->conversation === null && ! in_array($name, self::READ_ONLY, true)) {
+            throw new ToolFailed("{$name} is not available here.");
+        }
+
         return match ($name) {
             'search_properties'          => $this->searchProperties($input),
             'get_property'               => $this->getProperty($input),

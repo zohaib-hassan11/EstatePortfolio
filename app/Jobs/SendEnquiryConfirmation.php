@@ -4,13 +4,16 @@ namespace App\Jobs;
 
 use App\Mail\EnquiryReceived;
 use App\Models\Enquiry;
+use App\Services\AutoReply\EnquiryAutoReply;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Throwable;
 
 /**
- * Sends the confirmation email for a new enquiry.
+ * Sends the first email for a new enquiry: an AI-written answer to their
+ * question when one can be written and verified (EnquiryAutoReply), otherwise
+ * the template confirmation. Either way, exactly one email.
  *
  * Dispatched to run after the response has gone back to the visitor, so the
  * form answers instantly and a slow or broken mail server never shows up as
@@ -60,6 +63,29 @@ class SendEnquiryConfirmation
         return config('mail.default') !== 'log';
     }
 
+    /**
+     * The AI's answer to their question, if it can write one that passes the
+     * fact check; null sends the template. A resend repeats what was already
+     * sent rather than asking the model again - the client sees the same email.
+     */
+    private function reply(Enquiry $enquiry): ?string
+    {
+        if ($this->resend) {
+            return $enquiry->auto_reply;
+        }
+
+        $autoReply = app(EnquiryAutoReply::class);
+
+        try {
+            return $autoReply->shouldReply($enquiry) ? $autoReply->compose($enquiry) : null;
+        } catch (Throwable $e) {
+            // Anything unexpected in the AI path still leaves the template to send.
+            report($e);
+
+            return null;
+        }
+    }
+
     /** @return bool whether the email was handed to the mail server */
     public function handle(): bool
     {
@@ -80,8 +106,10 @@ class SendEnquiryConfirmation
             return false;
         }
 
+        $reply = $this->reply($enquiry);
+
         try {
-            Mail::to($enquiry->email, $enquiry->name)->send(new EnquiryReceived($enquiry));
+            Mail::to($enquiry->email, $enquiry->name)->send(new EnquiryReceived($enquiry, $reply));
         } catch (Throwable $e) {
             report($e);
 
@@ -89,7 +117,7 @@ class SendEnquiryConfirmation
         }
 
         RateLimiter::hit($key, 3600);
-        $enquiry->forceFill(['confirmation_sent_at' => now()])->saveQuietly();
+        $enquiry->forceFill(['confirmation_sent_at' => now(), 'auto_reply' => $reply])->saveQuietly();
 
         return true;
     }

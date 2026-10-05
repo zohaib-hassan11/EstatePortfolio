@@ -9,20 +9,26 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * "We have your enquiry" - sent to the person who made it.
+ * The first email to the person who made an enquiry.
  *
- * Built entirely from the enquiry and the listing record, never by a model:
- * this goes to a client unread, so every word in it has to be right. It
- * deliberately does not repeat the visitor's free-text message - anyone can
- * type any address into a public form, and echoing their text would let the
- * form be used to send arbitrary content to strangers.
+ * Two forms. With a `$reply`, the body is an AI answer to their question that
+ * has already passed ReplyCheck, and a footnote says it was prepared
+ * automatically. Without one, it is the template confirmation, built entirely
+ * from the records. The listing card, contact details and office hours are
+ * always from the records, never from the model. Neither form repeats the
+ * visitor's own text - anyone can type any address into a public form.
  *
  * It is sent in the agent's name, and replies go to the agent's own inbox.
  */
 class EnquiryReceived extends Mailable
 {
-    public function __construct(public readonly Enquiry $enquiry)
-    {
+    /**
+     * @param  string|null  $reply  an AI answer that passed the fact check; null sends the template wording
+     */
+    public function __construct(
+        public readonly Enquiry $enquiry,
+        public readonly ?string $reply = null,
+    ) {
     }
 
     public function envelope(): Envelope
@@ -41,6 +47,8 @@ class EnquiryReceived extends Mailable
             'property' => $this->enquiry->property?->is_published ? $this->enquiry->property : null,
             'agent'    => config('agent'),
             'whatsapp' => 'https://wa.me/'.config('agent.whatsapp'),
+            // Blank-line separated, rendered as escaped text: it is model output.
+            'paragraphs' => $this->reply ? preg_split('/\n\s*\n/', trim($this->reply)) : [],
         ]);
     }
 
@@ -48,6 +56,8 @@ class EnquiryReceived extends Mailable
     {
         return match (true) {
             $this->enquiry->type === 'appraisal'    => 'Your free appraisal request - '.config('agent.agency'),
+            $this->reply !== null && $this->enquiry->property !== null => 'Re: your enquiry about '.$this->enquiry->property->title,
+            $this->reply !== null                   => 'Re: your enquiry - '.config('agent.agency'),
             $this->enquiry->property !== null       => 'Your enquiry about '.$this->enquiry->property->title,
             default                                 => 'Thanks for getting in touch - '.config('agent.agency'),
         };
