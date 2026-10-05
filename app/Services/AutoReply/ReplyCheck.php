@@ -72,6 +72,14 @@ class ReplyCheck
     /** @return array<string, float> mention as written => rupees */
     private function amounts(string $text): array
     {
+        // "PKR 3-5 Crore" / "3 to 5 crore" is two amounts sharing one unit;
+        // read alone, the "3" would be three rupees.
+        $text = preg_replace(
+            '/(\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)\s*(crore|lakh|million)\b/iu',
+            '$1 $3 - $2 $3',
+            $text,
+        );
+
         preg_match_all(self::MONEY, $text, $found, PREG_SET_ORDER);
 
         $amounts = [];

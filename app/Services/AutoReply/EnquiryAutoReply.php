@@ -62,6 +62,13 @@ class EnquiryAutoReply
                 function (string $name, array $input) use ($tools, &$grounding) {
                     $result = $tools->run($name, $input);
                     $grounding[] = $result;
+                    // The budget it searched with is true to state ("I looked at
+                    // 3-5 crore") even though no listing carries that price.
+                    foreach (['min_price', 'max_price'] as $bound) {
+                        if (is_numeric($input[$bound] ?? null)) {
+                            $grounding[] = 'Searched budget: PKR '.(int) $input[$bound];
+                        }
+                    }
 
                     return $result;
                 },

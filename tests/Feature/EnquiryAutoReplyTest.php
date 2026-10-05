@@ -113,6 +113,17 @@ class EnquiryAutoReplyTest extends TestCase
         $this->assertStringContainsString('PKR 6.5 Crore', Enquiry::sole()->auto_reply);
     }
 
+    public function test_the_reply_may_state_the_budget_it_searched(): void
+    {
+        $this->ai("Dear Ayesha,\n\nThank you for your enquiry. I searched Bahria Town for houses in a similar price range "
+            ."(PKR 3–5 Crore) and nothing matches right now, but this house is still for sale at PKR 3.25 Crore.\n\nRegards,\nZohaib Hassan")
+            ->callsTool('search_properties', ['area' => 'Bahria', 'min_price' => 30000000, 'max_price' => 50000000]);
+
+        $this->enquire('Anything similar in Bahria Town?');
+
+        $this->assertStringContainsString('PKR 3–5 Crore', (string) Enquiry::sole()->auto_reply);
+    }
+
     public function test_an_invented_price_falls_back_to_the_template(): void
     {
         $this->ai("Dear Ayesha,\n\nGood news - the owner will accept PKR 3 Crore if you can move this week. "

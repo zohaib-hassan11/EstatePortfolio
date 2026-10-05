@@ -75,6 +75,20 @@ class ReplyCheckTest extends TestCase
         $this->assertNotNull($this->check()->problem(self::letter(str_repeat('Lovely house. ', 300)), self::GROUNDING));
     }
 
+    public function test_a_price_range_reads_as_two_amounts_in_that_unit(): void
+    {
+        $grounding = self::GROUNDING."\nSearched budget: PKR 30000000\nSearched budget: PKR 50000000";
+
+        foreach (['PKR 3–5 Crore', 'PKR 3-5 crore', '3 to 5 crore'] as $range) {
+            $reply = self::letter("I searched Bahria Town for houses in a similar price range ({$range}) and nothing matches right now.");
+            $this->assertNull($this->check()->problem($reply, $grounding), $range);
+        }
+
+        // A range nobody searched is still an invention.
+        $reply = self::letter('I searched Bahria Town for houses in a similar price range (PKR 7–9 Crore) and found nothing.');
+        $this->assertStringContainsString('price', (string) $this->check()->problem($reply, $grounding));
+    }
+
     public function test_the_agents_whatsapp_link_is_allowed(): void
     {
         $reply = self::letter('Thank you for your enquiry about the house. You can also message me here: https://wa.me/923227289296 at any time.');
