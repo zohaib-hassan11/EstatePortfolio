@@ -14,7 +14,7 @@ set -euo pipefail
 # command line can be older than the version the website runs, so find a new
 # enough binary rather than trusting PATH. Override with PHP=/path/to/php.
 find_php() {
-    for candidate in "${PHP:-}" /opt/alt/php85/usr/bin/php /opt/alt/php84/usr/bin/php php8.5 php8.4 php; do
+    for candidate in "${PHP:-}" /opt/alt/php84/usr/bin/php /opt/alt/php85/usr/bin/php php8.4 php8.5 php; do
         [ -n "$candidate" ] || continue
         command -v "$candidate" >/dev/null 2>&1 || continue
         if "$candidate" -r 'exit(version_compare(PHP_VERSION, "8.4.1", ">=") ? 0 : 1);' 2>/dev/null; then
@@ -29,8 +29,10 @@ PHP_BIN=$(find_php) || {
     echo "No PHP 8.4.1+ found. In hPanel set PHP to 8.4, or run: PHP=/path/to/php8.4 ./deploy.sh" >&2
     exit 1
 }
+# Resolve composer's real path before the function below shadows the name.
+COMPOSER_BIN=$(command -v composer) || { echo "composer not found on PATH" >&2; exit 1; }
 php() { "$PHP_BIN" "$@"; }
-composer() { "$PHP_BIN" "$(command -v composer)" "$@"; }
+composer() { "$PHP_BIN" "$COMPOSER_BIN" "$@"; }
 echo "==> Using $("$PHP_BIN" -r 'echo PHP_BINARY, " (PHP ", PHP_VERSION, ")";')"
 
 echo "==> Pulling latest"
