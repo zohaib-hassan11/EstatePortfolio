@@ -131,6 +131,31 @@ cd ~/domains/yourdomain.com/app
 
 ---
 
+## Automatic deploys (GitHub Actions)
+
+Every push to `main` runs `.github/workflows/deploy.yml`:
+
+1. **Tests** - the full PHPUnit suite on PHP 8.4, plus a check that the
+   committed `public/build` matches a fresh `npm run build`.
+2. **Deploy** - only if tests pass: one SSH connection to the server, which
+   runs `git pull` and `./deploy.sh`.
+3. **Check** - fails the run if the site does not answer HTTP 200.
+
+Watch runs under the repo's **Actions** tab. To redeploy without a new commit,
+open the workflow there and press **Run workflow**.
+
+**The deploy key.** GitHub holds a private key (`DEPLOY_SSH_KEY` secret) whose
+public half sits in the server's `~/.ssh/authorized_keys` behind a `restrict`
+and a forced `command=`. Whatever a connection asks for, that key can only
+pull and deploy - no shell, no file access. To revoke it, delete the line
+ending `github-actions-deploy@estate.zhpluse.com` from that file.
+
+Still run `npm run build` and commit `public/build` before pushing front-end
+changes - the server has no Node, and the workflow will refuse to deploy a
+stale build.
+
+---
+
 ## 5. Before you call it live
 
 - [ ] `APP_DEBUG=false` and `APP_ENV=production` in the server `.env`

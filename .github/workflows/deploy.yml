@@ -1,0 +1,112 @@
+# Test, then deploy to Hostinger, on every push to main.
+#
+# Nothing reaches the live site unless the full test suite passes and the
+# committed front-end build matches the source. The deploy itself is one SSH
+# call; on the server that key is locked to running the deploy and nothing
+# else (see DEPLOYMENT.md, "Automatic deploys").
+#
+# Secrets (Settings -> Secrets and variables -> Actions):
+#   DEPLOY_SSH_KEY      private key whose public half is in the server's authorized_keys
+#   DEPLOY_HOST         server address
+#   DEPLOY_PORT         SSH port (Hostinger: 65002)
+#   DEPLOY_USER         SSH user
+#   DEPLOY_KNOWN_HOSTS  the server's host key line, so the connection cannot be spoofed
+
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button, to redeploy without a new commit
+
+# One deploy at a time, in push order. A deploy is never cancelled halfway.
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4' # same as the live site
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, fileinfo
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run tests
+        run: php artisan test
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The server has no Node, so public/build is built locally and committed.
+      # Rebuild it here and fail if it differs: that means someone forgot to
+      # run `npm run build` before pushing, and the live site would serve
+      # stale CSS/JS.
+      - name: Check the committed front-end build is up to date
+        run: |
+          npm ci
+          npm run build
+          if [ -n "$(git status --porcelain public/build)" ]; then
+            echo "::error::public/build is out of date. Run 'npm run build' and commit the result."
+            git status --short public/build
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy to Hostinger
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://estate.zhpluse.com
+    steps:
+      - name: Deploy over SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          # The server decides what this key runs (pull, then deploy.sh);
+          # nothing is sent from here but the connection itself.
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" \
+              -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=30 \
+              "$DEPLOY_USER@$DEPLOY_HOST"
+
+      - name: Check the site is up
+        run: |
+          for attempt in 1 2 3; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' https://estate.zhpluse.com/) || true
+            echo "Attempt $attempt: HTTP $status"
+            [ "$status" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::The site did not return 200 after deploying."
+          exit 1
