@@ -10,6 +10,7 @@ import ServiceAreaMap from './components/ServiceAreaMap.vue'
 import StackedBarChart from './components/StackedBarChart.vue'
 import HBarChart from './components/HBarChart.vue'
 import ReplyDrafter from './components/ReplyDrafter.vue'
+import PropertyAssistant from './components/PropertyAssistant.vue'
 
 /*
  * Vue islands.
@@ -29,6 +30,7 @@ const components = {
     StackedBarChart,
     HBarChart,
     ReplyDrafter,
+    PropertyAssistant,
 }
 
 document.querySelectorAll('[data-vue]').forEach((el) => {

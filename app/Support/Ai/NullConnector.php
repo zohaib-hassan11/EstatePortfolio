@@ -2,6 +2,8 @@
 
 namespace App\Support\Ai;
 
+use Closure;
+
 /**
  * What the container binds when no API key is set.
  *
@@ -20,5 +22,15 @@ class NullConnector implements AiConnector
     public function complete(string $system, string $prompt): string
     {
         throw AiUnavailable::notConfigured();
+    }
+
+    public function converse(string $system, array $messages, array $tools, Closure $runTool): string
+    {
+        throw AiUnavailable::notConfigured();
+    }
+
+    public function lastTokens(): int
+    {
+        return 0;
     }
 }

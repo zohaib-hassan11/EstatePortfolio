@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AssistantController as AdminAssistantController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\PropertyController as AdminPropertyController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PropertyController;
@@ -34,6 +36,11 @@ Route::get('/properties/{property}', [PropertyController::class, 'show'])->name(
 Route::post('/enquiries', [EnquiryController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('enquiries.store');
+
+Route::get('/assistant', [AssistantController::class, 'show'])->name('assistant.show');
+Route::post('/assistant', [AssistantController::class, 'store'])
+    ->middleware('throttle:assistant')
+    ->name('assistant.store');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
@@ -66,6 +73,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->middleware('throttle:20,1')
             ->name('enquiries.draft');
         Route::delete('enquiries/{enquiry}', [AdminEnquiryController::class, 'destroy'])->name('enquiries.destroy');
+
+        Route::get('assistant', [AdminAssistantController::class, 'index'])->name('assistant.index');
+        Route::get('assistant/questions', [AdminAssistantController::class, 'questions'])->name('assistant.questions');
+        Route::get('assistant/{conversation}', [AdminAssistantController::class, 'show'])->name('assistant.show');
 
         Route::resource('testimonials', AdminTestimonialController::class)->except('show');
 

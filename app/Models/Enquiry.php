@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Enquiry extends Model
 {
@@ -16,6 +17,9 @@ class Enquiry extends Model
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_REPLIED     = 'replied';
     public const STATUS_CLOSED      = 'closed';
+
+    public const SOURCE_FORM = 'form';
+    public const SOURCE_CHAT = 'chat';
 
     /** Statuses that still owe the sender something. */
     public const OPEN_STATUSES = [self::STATUS_NEW, self::STATUS_IN_PROGRESS];
@@ -44,6 +48,12 @@ class Enquiry extends Model
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
+    }
+
+    /** The assistant chat this enquiry came out of, if it did. */
+    public function conversation(): HasOne
+    {
+        return $this->hasOne(ChatConversation::class);
     }
 
     /** One value out of the appraisal `details` blob, without the null dance. */
@@ -95,6 +105,11 @@ class Enquiry extends Model
     | Presentation
     |--------------------------------------------------------------------------
     */
+
+    public function cameFromChat(): bool
+    {
+        return $this->source === self::SOURCE_CHAT;
+    }
 
     public function isRead(): bool
     {

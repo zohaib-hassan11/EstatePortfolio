@@ -143,6 +143,15 @@ cd ~/domains/yourdomain.com/app
 - [ ] Submit `https://yourdomain.com/sitemap.xml` in Google Search Console
 - [ ] Check `https://yourdomain.com/storage/branding/...` loads — if not, the
       `storage:link` symlink did not take
+- [ ] **AI features (optional)** — set `OPENROUTER_API_KEY` (or `ANTHROPIC_API_KEY`)
+      in `.env` to switch on the reply drafts and the public chat assistant. Leave
+      both blank and neither appears. Keep credit on the OpenRouter key: when it
+      runs dry, visitors get your phone number instead of an answer. `AI_CHAT_ENABLED=false` keeps the drafts but hides the assistant;
+      `AI_CHAT_DAILY_LIMIT` caps how many visitor messages it answers per day.
+- [ ] **Scheduler cron** — hPanel → Advanced → Cron Jobs, every minute:
+      `cd ~/domains/yourdomain.com/app && php artisan schedule:run >> /dev/null 2>&1`
+      (adjust the path to where you cloned the app). It deletes anonymous
+      assistant chats after 90 days.
 
 ---
 

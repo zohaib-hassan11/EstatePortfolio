@@ -13,6 +13,7 @@
         ['name' => $property->title, 'url' => null],
     ],
     'schema' => [\App\Support\Seo::property($property)],
+    'assistantProperty' => $property,
 ])
 
 @php $agent = config('agent'); @endphp

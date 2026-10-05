@@ -18,6 +18,7 @@
         ['route' => 'admin.dashboard',          'label' => 'Dashboard',    'match' => 'admin.dashboard'],
         ['route' => 'admin.properties.index',   'label' => 'Properties',   'match' => 'admin.properties.*'],
         ['route' => 'admin.enquiries.index',    'label' => 'Enquiries',    'match' => 'admin.enquiries.*'],
+        ['route' => 'admin.assistant.index',    'label' => 'Assistant',    'match' => 'admin.assistant.*'],
         ['route' => 'admin.testimonials.index', 'label' => 'Testimonials', 'match' => 'admin.testimonials.*'],
         ['route' => 'admin.settings.index',     'label' => 'Settings',     'match' => 'admin.settings.*'],
         ['route' => 'admin.profile.edit',       'label' => 'Profile',      'match' => 'admin.profile.*'],

@@ -28,6 +28,19 @@
                 <p class="mt-6 text-sm text-ink-400">No message was included.</p>
             @endif
 
+            @if ($enquiry->conversation)
+                {{-- The chat it came out of: what they asked, and what they were told. --}}
+                <details class="mt-6 rounded-lg border border-teal-100 bg-teal-50/40 p-4" open>
+                    <summary class="cursor-pointer text-sm font-semibold text-ink-900">
+                        Assistant chat &middot; {{ $enquiry->conversation->visitor_messages }} {{ Str::plural('message', $enquiry->conversation->visitor_messages) }}
+                    </summary>
+                    <p class="mt-1 text-xs text-ink-500">The message above is the assistant's summary. This is what was actually said.</p>
+                    <div class="mt-4 max-h-[28rem] overflow-y-auto pr-1">
+                        @include('admin.assistant._transcript', ['messages' => $enquiry->conversation->messages])
+                    </div>
+                </details>
+            @endif
+
             @if (filled($enquiry->details))
                 <dl class="mt-6 grid gap-4 border-t border-ink-100 pt-6 sm:grid-cols-2">
                     @foreach ($enquiry->details as $key => $value)
@@ -92,9 +105,11 @@
                 @endif
 
                 <div class="mt-4 space-y-2">
-                    <a href="mailto:{{ $enquiry->email }}?subject={{ urlencode('Re: your enquiry with '.config('agent.name')) }}" class="btn-primary w-full">
-                        Email {{ Str::before($enquiry->email, '@') }}
-                    </a>
+                    @if ($enquiry->email)
+                        <a href="mailto:{{ $enquiry->email }}?subject={{ urlencode('Re: your enquiry with '.config('agent.name')) }}" class="btn-primary w-full">
+                            Email {{ Str::before($enquiry->email, '@') }}
+                        </a>
+                    @endif
                     @if ($enquiry->phone)
                         <a href="tel:{{ preg_replace('/[^0-9+]/', '', $enquiry->phone) }}" class="btn-outline w-full">Call {{ $enquiry->phone }}</a>
                         <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $enquiry->phone) }}" target="_blank" rel="noopener noreferrer"
@@ -103,11 +118,14 @@
                 </div>
 
                 <dl class="mt-6 space-y-3 border-t border-ink-100 pt-5 text-sm">
-                    <div><dt class="text-ink-400">Email</dt><dd class="break-all text-ink-800">{{ $enquiry->email }}</dd></div>
+                    @if ($enquiry->email)
+                        <div><dt class="text-ink-400">Email</dt><dd class="break-all text-ink-800">{{ $enquiry->email }}</dd></div>
+                    @endif
                     @if ($enquiry->phone)
                         <div><dt class="text-ink-400">Phone</dt><dd class="text-ink-800">{{ $enquiry->phone }}</dd></div>
                     @endif
                     <div><dt class="text-ink-400">Type</dt><dd class="text-ink-800">{{ $enquiry->typeLabel() }}</dd></div>
+                    <div><dt class="text-ink-400">Came in via</dt><dd class="text-ink-800">{{ $enquiry->cameFromChat() ? 'Website assistant' : 'Website form' }}</dd></div>
                 </dl>
             </div>
 

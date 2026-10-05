@@ -36,6 +36,7 @@ class EnquiryController extends Controller
     public function show(Enquiry $enquiry, EnquiryReplyDrafter $drafter)
     {
         $enquiry->forceFill(['read_at' => $enquiry->read_at ?? now()])->save();
+        $enquiry->load('conversation.messages');
 
         return view('admin.enquiries.show', [
             'enquiry'     => $enquiry,
@@ -73,7 +74,7 @@ class EnquiryController extends Controller
         }
 
         try {
-            return response()->json(['draft' => $drafter->draftFor($enquiry->load('property'))]);
+            return response()->json(['draft' => $drafter->draftFor($enquiry->load(['property', 'conversation.messages']))]);
         } catch (AiUnavailable $e) {
             // The agent can still write the reply themselves, so this is a
             // degraded feature, not a broken page.

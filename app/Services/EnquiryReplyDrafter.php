@@ -6,6 +6,7 @@ use App\Models\Enquiry;
 use App\Models\Property;
 use App\Support\Ai\AiConnector;
 use App\Support\Ai\AiUnavailable;
+use App\Support\PropertyFacts;
 
 /**
  * Writes a first draft of the agent's reply to an enquiry.
@@ -73,6 +74,7 @@ class EnquiryReplyDrafter
     {
         $facts = $this->facts($enquiry);
         $message = trim((string) $enquiry->message) ?: '(They left no message.)';
+        $chat = $this->chat($enquiry);
 
         return <<<PROMPT
         FACTS
@@ -80,9 +82,33 @@ class EnquiryReplyDrafter
 
         THEIR MESSAGE
         "{$message}"
-
+        {$chat}
         Draft my reply to {$enquiry->name}.
         PROMPT;
+    }
+
+    /**
+     * Leads from the website assistant arrive with the chat behind them. The
+     * message above is the assistant's one-line summary; the transcript is what
+     * the reply should actually pick up from - especially what it deferred.
+     */
+    private function chat(Enquiry $enquiry): string
+    {
+        $conversation = $enquiry->conversation;
+
+        if (! $conversation || $conversation->messages->isEmpty()) {
+            return '';
+        }
+
+        return <<<CHAT
+
+        THEIR CHAT WITH MY WEBSITE ASSISTANT
+        (The message above is the assistant's summary of this chat. The assistant answered only from
+        my listing records and told them I would confirm anything else - pick up those open points.
+        It is not a source of new facts.)
+        {$conversation->transcript()}
+
+        CHAT;
     }
 
     /** Everything the model is permitted to treat as true, and nothing else. */
@@ -117,40 +143,7 @@ class EnquiryReplyDrafter
     /** @return list<string> */
     private function propertyFacts(Property $property): array
     {
-        $lines = [
-            'They are asking about this listing: '.$property->title,
-            'Address: '.$property->shortAddress(),
-            'Listing status: '.$property->statusLabel(),
-            'Price as advertised: '.$property->priceDisplay(),
-            'Property type: '.$property->typeLabel(),
-        ];
-
-        if ($property->hasRooms()) {
-            $lines[] = sprintf(
-                'Bedrooms: %s. Bathrooms: %s. Car spaces: %s.',
-                $property->bedrooms ?: 'not recorded',
-                $property->bathrooms ?: 'not recorded',
-                $property->carspaces ?: 'not recorded',
-            );
-        }
-
-        if ($land = $property->landDisplay()) {
-            $lines[] = 'Land size: '.$land;
-        }
-
-        if ($floor = $property->floorDisplay()) {
-            $lines[] = 'Covered area: '.$floor;
-        }
-
-        if (filled($property->features)) {
-            $lines[] = 'Listed features: '.implode(', ', (array) $property->features);
-        }
-
-        if (filled($property->description)) {
-            $lines[] = 'Listing description: '.$property->description;
-        }
-
-        return $lines;
+        return ['They are asking about this listing: '.$property->title, ...PropertyFacts::lines($property)];
     }
 
     /** @return list<string> */

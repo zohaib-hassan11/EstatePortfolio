@@ -37,6 +37,7 @@
 
     @include('partials.footer')
     @include('partials.floating-actions')
+    @include('partials.assistant', ['property' => $assistantProperty ?? null])
 
     @if (filled(config('agent.seo.analytics_id')))
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('agent.seo.analytics_id') }}"></script>

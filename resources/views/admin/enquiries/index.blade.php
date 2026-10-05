@@ -77,6 +77,12 @@
                                 {{ $enquiry->typeLabel() }}
                             </span>
 
+                            @if ($enquiry->cameFromChat())
+                                <span class="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700">
+                                    Via assistant
+                                </span>
+                            @endif
+
                             @if ($enquiry->isOverdue())
                                 <span class="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
                                     Overdue
@@ -85,7 +91,7 @@
                         </p>
 
                         <p class="mt-1 truncate text-sm text-ink-500">
-                            {{ $enquiry->email }}@if ($enquiry->phone) &middot; {{ $enquiry->phone }} @endif
+                            {{ collect([$enquiry->email, $enquiry->phone])->filter()->implode(' · ') }}
                             @if ($enquiry->property) &middot; re: {{ $enquiry->property->title }} @endif
                         </p>
 

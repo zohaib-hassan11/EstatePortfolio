@@ -2,6 +2,8 @@
 
 namespace App\Support\Ai;
 
+use Closure;
+
 /**
  * The one way this application talks to a language model.
  *
@@ -24,4 +26,28 @@ interface AiConnector
      * @throws AiUnavailable when the model cannot be reached or returns nothing
      */
     public function complete(string $system, string $prompt): string;
+
+    /**
+     * Carry on a conversation in which the model may call tools, and return its
+     * final reply once it has stopped calling them.
+     *
+     * The tool loop lives behind this method so nothing above it ever handles a
+     * vendor's message objects. Callers describe the tools and supply one
+     * closure that runs them; it returns the result as text for the model to
+     * read, or throws ToolFailed to tell the model the call did not work.
+     *
+     * @param  list<array{role: 'user'|'assistant', content: string}>  $messages  oldest first, ending on the visitor
+     * @param  list<array{name: string, description: string, inputSchema: array<string, mixed>}>  $tools
+     * @param  Closure(string $name, array<string, mixed> $input): string  $runTool
+     *
+     * @throws AiUnavailable when the model cannot be reached or returns nothing
+     */
+    public function converse(string $system, array $messages, array $tools, Closure $runTool): string;
+
+    /**
+     * Tokens the most recent complete() or converse() call used, input and
+     * output, summed over every tool round. Zero before any call. Recorded
+     * against each reply so the agent can see what the assistant costs.
+     */
+    public function lastTokens(): int;
 }
