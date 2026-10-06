@@ -28,6 +28,40 @@
                 <p class="mt-6 text-sm text-ink-400">No message was included.</p>
             @endif
 
+            @if ($enquiry->qualification)
+                @include('admin.enquiries._qualification', ['qualification' => $enquiry->qualification])
+            @endif
+
+            @if (filled($enquiry->requirements))
+                @include('admin.enquiries._requirements', ['requirements' => \App\Services\Leads\Requirements::stated($enquiry->requirements), 'matches' => $matches])
+            @endif
+
+            @if ($enquiry->calls->isNotEmpty() || $enquiry->appointments->isNotEmpty())
+                <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                    @if ($enquiry->calls->isNotEmpty())
+                        <div class="rounded-lg border border-ink-100 p-4">
+                            <h3 class="text-sm font-semibold text-ink-900">Calls</h3>
+                            <ul class="mt-2 space-y-1.5 text-sm">
+                                @foreach ($enquiry->calls as $call)
+                                    <li><a href="{{ route('admin.calls.show', $call) }}" class="text-brass-600 hover:underline">{{ $call->started_at?->setTimezone(config('agent.appointments.timezone'))->format('j M, g:ia') ?? 'Call' }}</a> <span class="text-ink-400">&middot; {{ $call->durationLabel() }}</span></li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    @if ($enquiry->appointments->isNotEmpty())
+                        <div class="rounded-lg border border-ink-100 p-4">
+                            <h3 class="text-sm font-semibold text-ink-900">Viewings</h3>
+                            <ul class="mt-2 space-y-1.5 text-sm text-ink-700">
+                                @foreach ($enquiry->appointments as $appointment)
+                                    <li>{{ $appointment->whenLabel() }} <span class="text-ink-400">&middot; {{ $appointment->statusLabel() }}@if ($appointment->property) &middot; {{ $appointment->property->title }}@endif</span></li>
+                                @endforeach
+                            </ul>
+                            <a href="{{ route('admin.appointments.index') }}" class="mt-2 inline-block text-xs font-medium text-brass-600 hover:underline">Manage viewings</a>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             @if ($enquiry->auto_reply)
                 {{-- Exactly what the client was emailed, so the follow-up never contradicts it. --}}
                 <details class="mt-6 rounded-lg border border-brass-200 bg-brass-50/50 p-4" open>
@@ -136,7 +170,7 @@
                         <div><dt class="text-ink-400">Phone</dt><dd class="text-ink-800">{{ $enquiry->phone }}</dd></div>
                     @endif
                     <div><dt class="text-ink-400">Type</dt><dd class="text-ink-800">{{ $enquiry->typeLabel() }}</dd></div>
-                    <div><dt class="text-ink-400">Came in via</dt><dd class="text-ink-800">{{ $enquiry->cameFromChat() ? 'Website assistant' : 'Website form' }}</dd></div>
+                    <div><dt class="text-ink-400">Came in via</dt><dd class="text-ink-800">{{ $enquiry->sourceLabel() }}</dd></div>
                     <div>
                         <dt class="text-ink-400">First email</dt>
                         <dd class="text-ink-800">

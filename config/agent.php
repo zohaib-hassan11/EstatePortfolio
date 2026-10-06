@@ -64,6 +64,34 @@ return [
         'Sunday'            => 'By appointment',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Viewings and appointments
+    |--------------------------------------------------------------------------
+    |
+    | When the phone agent may offer viewings. Hours are local (timezone below)
+    | and a day can have several windows. `auto_confirm` false means a booked
+    | slot is a request the agent confirms - the calendar here does not know
+    | about the rest of the agent's day.
+    |
+    */
+    'appointments' => [
+        'timezone'          => 'Asia/Karachi',
+        'slot_minutes'      => 60,
+        'min_notice_hours'  => 3,
+        'days_ahead'        => 14,
+        'auto_confirm'      => (bool) env('APPOINTMENTS_AUTO_CONFIRM', false),
+        'hours' => [
+            'mon' => [['10:00', '20:00']],
+            'tue' => [['10:00', '20:00']],
+            'wed' => [['10:00', '20:00']],
+            'thu' => [['10:00', '20:00']],
+            'fri' => [['10:00', '12:30'], ['14:30', '20:00']],
+            'sat' => [['10:00', '20:00']],
+            'sun' => [],
+        ],
+    ],
+
     'service_areas' => [
         'DHA Lahore', 'Bahria Town', 'Gulberg', 'Model Town', 'Johar Town',
         'Askari', 'Cantt', 'Wapda Town', 'Valencia Town', 'Iqbal Town',

@@ -19,6 +19,8 @@
         ['route' => 'admin.properties.index',   'label' => 'Properties',   'match' => 'admin.properties.*'],
         ['route' => 'admin.enquiries.index',    'label' => 'Enquiries',    'match' => 'admin.enquiries.*'],
         ['route' => 'admin.assistant.index',    'label' => 'Assistant',    'match' => 'admin.assistant.*'],
+        ['route' => 'admin.calls.index',        'label' => 'Calls',        'match' => 'admin.calls.*'],
+        ['route' => 'admin.appointments.index', 'label' => 'Appointments', 'match' => 'admin.appointments.*'],
         ['route' => 'admin.testimonials.index', 'label' => 'Testimonials', 'match' => 'admin.testimonials.*'],
         ['route' => 'admin.settings.index',     'label' => 'Settings',     'match' => 'admin.settings.*'],
         ['route' => 'admin.profile.edit',       'label' => 'Profile',      'match' => 'admin.profile.*'],
@@ -26,6 +28,7 @@
     // Counts what still owes someone a reply, not mail merely left unopened -
     // an enquiry the agent skimmed and never answered is still outstanding work.
     $outstanding = \App\Models\Enquiry::needsReply()->count();
+    $toConfirm = \App\Models\Appointment::where('status', \App\Models\Appointment::REQUESTED)->where('starts_at', '>=', now())->count();
 @endphp
 
 <div class="flex min-h-screen flex-col lg:flex-row">
@@ -55,6 +58,9 @@
                             {{ $item['label'] }}
                             @if ($item['label'] === 'Enquiries' && $outstanding)
                                 <span class="rounded-full bg-brass-500 px-2 py-0.5 text-[11px] font-bold text-white">{{ $outstanding }}</span>
+                            @endif
+                            @if ($item['label'] === 'Appointments' && $toConfirm)
+                                <span class="rounded-full bg-brass-500 px-2 py-0.5 text-[11px] font-bold text-white" title="Waiting for you to confirm">{{ $toConfirm }}</span>
                             @endif
                         </a>
                     </li>

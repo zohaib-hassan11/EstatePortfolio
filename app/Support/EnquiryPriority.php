@@ -44,6 +44,12 @@ class EnquiryPriority
      */
     private static function assess(Enquiry $enquiry): array
     {
+        // A lead the phone agent qualified carries its own scored grade, which
+        // knows far more than the form fields below can.
+        if (filled($enquiry->qualification['grade'] ?? null)) {
+            return [$enquiry->qualification['grade'], $enquiry->qualification['summary'] ?? 'Qualified by the phone agent'];
+        }
+
         if ($enquiry->type === 'appraisal') {
             return static::assessSeller($enquiry);
         }

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Support\EnquiryPriority;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Enquiry extends Model
@@ -20,6 +22,7 @@ class Enquiry extends Model
 
     public const SOURCE_FORM = 'form';
     public const SOURCE_CHAT = 'chat';
+    public const SOURCE_VOICE = 'voice';
 
     /** Statuses that still owe the sender something. */
     public const OPEN_STATUSES = [self::STATUS_NEW, self::STATUS_IN_PROGRESS];
@@ -30,6 +33,8 @@ class Enquiry extends Model
     {
         return [
             'details'      => 'array',
+            'requirements' => 'array',
+            'qualification' => 'array',
             'read_at'      => 'datetime',
             'follow_up_at' => 'datetime',
             'confirmation_sent_at' => 'datetime',
@@ -40,6 +45,13 @@ class Enquiry extends Model
     {
         // Priority is derived from fields the sender filled in, so it is settled
         // the moment the enquiry arrives and never needs recalculating.
+        // Kept in one comparable form so a repeat caller finds their lead.
+        static::saving(function (Enquiry $enquiry) {
+            if ($enquiry->isDirty('phone')) {
+                $enquiry->phone_normalized = Phone::normalize($enquiry->phone);
+            }
+        });
+
         static::creating(function (Enquiry $enquiry) {
             $enquiry->priority ??= EnquiryPriority::for($enquiry);
             $enquiry->status ??= self::STATUS_NEW;
@@ -49,6 +61,17 @@ class Enquiry extends Model
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
+    }
+
+    /** Phone calls with this lead, newest first. */
+    public function calls(): HasMany
+    {
+        return $this->hasMany(Call::class)->latest('started_at');
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class)->orderBy('starts_at');
     }
 
     /** The assistant chat this enquiry came out of, if it did. */
@@ -106,6 +129,20 @@ class Enquiry extends Model
     | Presentation
     |--------------------------------------------------------------------------
     */
+
+    public function cameFromCall(): bool
+    {
+        return $this->source === self::SOURCE_VOICE;
+    }
+
+    public function sourceLabel(): string
+    {
+        return match ($this->source) {
+            self::SOURCE_CHAT  => 'Website assistant',
+            self::SOURCE_VOICE => 'Phone agent',
+            default            => 'Website form',
+        };
+    }
 
     public function cameFromChat(): bool
     {

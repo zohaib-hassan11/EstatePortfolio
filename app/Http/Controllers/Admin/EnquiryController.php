@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendEnquiryConfirmation;
 use App\Models\Enquiry;
 use App\Services\EnquiryReplyDrafter;
+use App\Services\Leads\PropertyMatcher;
 use App\Support\Ai\AiUnavailable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,14 +35,16 @@ class EnquiryController extends Controller
         ]);
     }
 
-    public function show(Enquiry $enquiry, EnquiryReplyDrafter $drafter)
+    public function show(Enquiry $enquiry, EnquiryReplyDrafter $drafter, PropertyMatcher $matcher)
     {
         $enquiry->forceFill(['read_at' => $enquiry->read_at ?? now()])->save();
-        $enquiry->load('conversation.messages');
+        $enquiry->load(['conversation.messages', 'calls', 'appointments.property']);
 
         return view('admin.enquiries.show', [
             'enquiry'     => $enquiry,
             'aiAvailable' => $drafter->isAvailable(),
+            // Live, so a listing added since the call shows up here.
+            'matches'     => filled($enquiry->requirements) ? $matcher->match($enquiry->requirements) : null,
         ]);
     }
 

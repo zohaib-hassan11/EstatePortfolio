@@ -7,6 +7,7 @@ use App\Models\ChatConversation;
 use App\Models\ChatUnansweredQuestion;
 use App\Models\Enquiry;
 use App\Models\Property;
+use App\Services\Listings\PropertySearch;
 use App\Support\Ai\ToolFailed;
 use App\Support\PropertyFacts;
 use Illuminate\Support\Facades\DB;
@@ -146,50 +147,13 @@ class AssistantTools
 
     private function searchProperties(array $input): string
     {
-        $data = $this->validate($input, [
-            'area'         => ['nullable', 'string', 'max:80'],
-            'type'         => ['nullable', Rule::in(array_keys(config('agent.property_types')))],
-            'min_bedrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
-            'min_price'    => ['nullable', 'integer', 'min:0'],
-            'max_price'    => ['nullable', 'integer', 'min:0'],
-            'keywords'     => ['nullable', 'string', 'max:80'],
-            'sold'         => ['nullable', 'boolean'],
-        ]);
-
-        $query = Property::published()
-            ->when($data['sold'] ?? false, fn ($q) => $q->sold(), fn ($q) => $q->forSale())
-            // The model says "DHA"; the listing says "DHA Phase 6". The site's own
-            // filter matches areas exactly because it offers a dropdown.
-            ->when($data['area'] ?? null, fn ($q, $v) => $q->where('suburb', 'like', '%'.$this->stripWildcards($v).'%'))
-            ->filter([
-                'type' => $data['type'] ?? null,
-                'beds' => $data['min_bedrooms'] ?? null,
-                'min'  => $data['min_price'] ?? null,
-                'max'  => $data['max_price'] ?? null,
-                'q'    => isset($data['keywords']) ? $this->stripWildcards($data['keywords']) : null,
-            ]);
-
-        $total = (clone $query)->count();
-
-        $matches = $query->orderByDesc('is_featured')->latest()->take(self::SEARCH_LIMIT)->get()
-            ->map(fn (Property $p) => array_filter([
-                'slug'     => $p->slug,
-                'title'    => $p->title,
-                'url'      => route('properties.show', $p),
-                'status'   => $p->statusLabel(),
-                'price'    => $p->priceDisplay(),
-                'type'     => $p->typeLabel(),
-                'area'     => $p->suburb,
-                'bedrooms' => $p->hasRooms() ? $p->bedrooms : null,
-                'land'     => $p->landDisplay(),
-            ], fn ($v) => $v !== null && $v !== ''))
-            ->values();
+        $result = app(PropertySearch::class)->search($this->validate($input, PropertySearch::rules()), self::SEARCH_LIMIT);
 
         return $this->json([
-            'total_matches' => $total,
-            'showing'       => $matches->count(),
-            'properties'    => $matches,
-            'note'          => $total === 0 ? 'Nothing matches. Say so plainly and suggest widening the search or leaving details with the agent.' : null,
+            'total_matches' => $result['total'],
+            'showing'       => count($result['properties']),
+            'properties'    => array_map(fn ($p) => array_diff_key($p, ['price_pkr' => 0]), $result['properties']),
+            'note'          => $result['total'] === 0 ? 'Nothing matches. Say so plainly and suggest widening the search or leaving details with the agent.' : null,
         ]);
     }
 
@@ -280,15 +244,6 @@ class AssistantTools
         }
 
         return $validator->validated();
-    }
-
-    /**
-     * Wildcards are dropped rather than escaped: SQLite and MySQL disagree on
-     * the default LIKE escape character, and no area name contains either.
-     */
-    private function stripWildcards(string $value): string
-    {
-        return trim(str_replace(['%', '_'], ' ', $value));
     }
 
     private function json(array $data): string

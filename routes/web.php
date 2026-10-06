@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
 use App\Http\Controllers\Admin\AssistantController as AdminAssistantController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CallController as AdminCallController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -76,6 +78,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->middleware('throttle:10,1')
             ->name('enquiries.confirmation');
         Route::delete('enquiries/{enquiry}', [AdminEnquiryController::class, 'destroy'])->name('enquiries.destroy');
+
+        Route::get('calls', [AdminCallController::class, 'index'])->name('calls.index');
+        Route::get('calls/{call}', [AdminCallController::class, 'show'])->name('calls.show');
+        Route::get('appointments', [AdminAppointmentController::class, 'index'])->name('appointments.index');
+        Route::patch('appointments/{appointment}', [AdminAppointmentController::class, 'update'])->name('appointments.update');
 
         Route::get('assistant', [AdminAssistantController::class, 'index'])->name('assistant.index');
         Route::get('assistant/questions', [AdminAssistantController::class, 'questions'])->name('assistant.questions');

@@ -77,6 +77,12 @@
                                 {{ $enquiry->typeLabel() }}
                             </span>
 
+                            @if ($enquiry->cameFromCall())
+                                <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                                    Phone call
+                                </span>
+                            @endif
+
                             @if ($enquiry->cameFromChat())
                                 <span class="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700">
                                     Via assistant
